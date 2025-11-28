@@ -1,0 +1,145 @@
+-- ============================================
+--   FULLSTACK APP – ESQUEMA COMPLETO
+--   MySQL Script
+-- ============================================
+
+-- 1. Crear base de datos
+CREATE DATABASE IF NOT EXISTS fullstack_app
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE fullstack_app;
+
+-- ============================================
+-- 2. TABLA: roles
+-- ============================================
+DROP TABLE IF EXISTS user_roles;
+DROP TABLE IF EXISTS roles;
+
+CREATE TABLE roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(255)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- 3. TABLA: users
+-- ============================================
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
+    enabled TINYINT(1) NOT NULL DEFAULT 1,
+    account_non_expired TINYINT(1) NOT NULL DEFAULT 1,
+    account_non_locked TINYINT(1) NOT NULL DEFAULT 1,
+    credentials_non_expired TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ============================================
+-- 4. TABLA: user_roles (N:M)
+-- ============================================
+DROP TABLE IF EXISTS user_roles;
+
+CREATE TABLE user_roles (
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    PRIMARY KEY (user_id, role_id),
+    CONSTRAINT fk_user_roles_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE,
+    CONSTRAINT fk_user_roles_role
+        FOREIGN KEY (role_id) REFERENCES roles(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ============================================
+-- 5. TABLA: product_types
+-- ============================================
+DROP TABLE IF EXISTS product_types;
+
+CREATE TABLE product_types (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    description VARCHAR(255)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- 6. TABLA: products
+-- ============================================
+DROP TABLE IF EXISTS products;
+
+CREATE TABLE products (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0,
+    product_type_id BIGINT NOT NULL,
+    created_by BIGINT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_products_product_type
+        FOREIGN KEY (product_type_id) REFERENCES product_types(id),
+    CONSTRAINT fk_products_created_by
+        FOREIGN KEY (created_by) REFERENCES users(id)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- 7. INSERTS INICIALES (SEED DATA)
+-- ============================================
+
+-- Roles
+INSERT INTO roles (name, description) VALUES
+('ROLE_ADMIN', 'Administrador del sistema'),
+('ROLE_USER', 'Usuario estándar');
+
+-- Tipos de producto
+INSERT INTO product_types (name, description) VALUES
+('ELECTRONICA', 'Productos electrónicos'),
+('ROPA', 'Ropa y accesorios'),
+('SERVICIO', 'Servicios y mano de obra');
+
+
+INSERT INTO users (email, password, full_name) VALUES
+(
+    'admin@example.com',
+    '$2a$10$uAX33Z/9bhDYK0rLOMwkHuJif6MhviYe0hrevUrrGbkELETVORccW',
+    'Administrador del Sistema'
+);
+
+-- Asignar ROLE_ADMIN al admin
+INSERT INTO user_roles (user_id, role_id) VALUES
+(
+    1,
+    (SELECT id FROM roles WHERE name = 'ROLE_ADMIN')
+);
+
+
+UPDATE users
+SET password = '$2a$10$uAX33Z/9bhDYK0rLOMwkHuJif6MhviYe0hrevUrrGbkELETVORccW'
+WHERE email = 'admin@example.com';
+
+INSERT INTO users (
+    id,
+    full_name,
+    email,
+    password,
+    enabled,
+    account_non_expired,
+    account_non_locked,
+    credentials_non_expired
+)
+VALUES (
+    2,
+    'Usuario Normal',
+    'user@example.com',
+    '$2a$10$tO0pmfn/.ysBgZw2BiAPfO6QFjeD0D5hHjs8t3fUSCiOr1hePzTJm',
+    true,
+    true,
+    true,
+    true
+);
